@@ -1,21 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const storageController = require('../controller/storage');
 
-router.get('/files', (req, res, next) => {
+router.get('/files', storageController.getFiles);
 
-});
+router.post('/file', storageController.uploadFile);
 
-router.post('/file', (req, res, next) => {
+router.put('/file', storageController.updateFile);
 
-});
-
-router.put('/file', (req, res, next) => {
-
-});
-
-router.delete('/file', (req, res, next) => {
-
-});
+router.delete('/file', storageController.deleteFile);
 
 
 module.exports = router;

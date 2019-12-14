@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const authRouter = require('./routes/auth');
 const storageRouter = require('./routes/storage');
@@ -31,6 +32,13 @@ app.use((error, req, res, next) => {
   res.status(status).json({message, data});
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Listan at ${process.env.PORT}`);
-});
+
+const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@perstorage-qxol9.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+.then(result => {
+  app.listen(process.env.PORT, () => {
+    console.log(`Listan at ${process.env.PORT}`);
+  });
+})
+.catch(err => { throw new Error(err) });

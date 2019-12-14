@@ -7,6 +7,7 @@ dotenv.config();
 
 const app = express();
 
+app.use('/storage', express.static(path.join(__dirname, 'storage')));
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {

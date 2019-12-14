@@ -31,4 +31,6 @@ app.use((error, req, res, next) => {
   res.status(status).json({message, data});
 });
 
-app.listen(8000);
+app.listen(process.env.PORT, () => {
+  console.log(`Listan at ${process.env.PORT}`);
+});

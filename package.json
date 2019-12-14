@@ -1,0 +1,22 @@
+{
+  "name": "perstorage-backend",
+  "version": "1.0.0",
+  "description": "Backend part of Perstorage application.",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SztefkoKamil/perstorage-backend.git"
+  },
+  "keywords": [
+    "files-storage"
+  ],
+  "author": "webkas",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SztefkoKamil/perstorage-backend/issues"
+  },
+  "homepage": "https://github.com/SztefkoKamil/perstorage-backend#readme"
+}

@@ -3,6 +3,9 @@ const path = require('path');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 
+const authRouter = require('./routes/auth');
+const storageRouter = require('./routes/storage');
+
 dotenv.config();
 
 const app = express();
@@ -17,5 +20,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(authRouter);
+app.use(storageRouter);
+
+app.use((error, req, res, next) => {
+  console.log(error);
+  const status = error.statusCode || 500;
+  const message = error.message;
+  const data = error.data;
+  res.status(status).json({message, data});
+});
 
 app.listen(8000);

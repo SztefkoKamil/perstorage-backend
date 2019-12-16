@@ -38,7 +38,7 @@ const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@pe
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(result => {
   app.listen(process.env.PORT, () => {
-    console.log(`Listan at ${process.env.PORT}`);
+    console.log(`Listen at ${process.env.PORT}`);
   });
 })
 .catch(err => { throw new Error(err) });

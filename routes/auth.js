@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const authController = require('../controller/auth');
 const User = require('../model/user');
 
@@ -20,5 +20,9 @@ router.post('/login', [
   }),
   body('password').isLength({min: 6})
 ], authController.login);
+
+router.delete('/user/:id', [
+  param('id').isLength({min: 24, max: 24})
+], authController.delete)
 
 module.exports = router;

@@ -1,8 +1,10 @@
+const fs = require('fs');
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../model/user');
+
 
 exports.signup = async (req, res, next) => {
 
@@ -28,11 +30,12 @@ exports.signup = async (req, res, next) => {
     password: hashedPass
   });
   const savedUser = await newUser.save();
+  const userId = savedUser._id.toString();
 
-  // add user's files collection
+  fs.mkdirSync(`storage/user-${userId}`);
 
   const response = {
-    id: savedUser._id,
+    id: userId,
     email: savedUser.email,
     name: savedUser.name
   };
@@ -101,10 +104,13 @@ exports.delete = async (req, res, next) => {
   try {
   // check if user exist
   const deletedUser = await User.findByIdAndRemove(req.userId);
-  console.log(deleted);
 
-  // delete user's storage collection
-  mongoose.collection(`storage-${req.userId}`).drop();
+  // delete user's files from db
+
+  // delete user's files folder from hard disk
+  fs.rmdir(`storage/user-${req.userId}`, (err) => {
+    console.log(err);
+  });
 
   // send response for redirect
   const response = {

@@ -3,10 +3,10 @@ const Schema = mongoose.Schema;
 
 const fileSchema = new Schema({
   owner: { type: Schema.Types.ObjectId, ref: 'User' },
+  type: { type: String, required: true},
   name: { type: String, required: true},
   ext: { type: String, required: true},
-  path: { type: String, required: true},
-  type: { type: String, required: true},
+  path: { type: String, required: true}
 }, { timestamps: true });
 
 

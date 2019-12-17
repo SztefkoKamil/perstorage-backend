@@ -7,7 +7,8 @@ const User = require('../model/user');
 router.post('/signup', [
   body('email').isEmail().normalizeEmail().custom(async (email) => {
     const user = await User.findOne({email});
-    return user ? new Error('User with this email alredy exist.') : true;
+    if(user) throw new Error('User with this email alredy exist.'); 
+    else return true;
   }),
   body('name').isLength({min: 2}),
   body('password').isLength({min: 6})
@@ -16,7 +17,8 @@ router.post('/signup', [
 router.post('/login', [
   body('email').isEmail().normalizeEmail().custom(async function(value) {
     const user = await User.findOne({email: value});
-    return user ? true : new Error('This user don\'t exist.');
+    if(!user) { throw new Error('This user don\'t exist.') }
+    else { return true; }
   }),
   body('password').isLength({min: 6})
 ], authController.login);

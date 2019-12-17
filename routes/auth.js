@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const authController = require('../controller/auth');
+const isAuth = require('../utils/isAuth');
 const User = require('../model/user');
 
 router.post('/signup', [
@@ -23,7 +24,7 @@ router.post('/login', [
   body('password').isLength({min: 6})
 ], authController.login);
 
-router.delete('/user/:id', [
+router.delete('/user/:id', isAuth, [
   param('id').isLength({min: 24, max: 24})
 ], authController.delete)
 

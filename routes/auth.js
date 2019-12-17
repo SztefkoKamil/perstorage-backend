@@ -5,8 +5,8 @@ const authController = require('../controller/auth');
 const User = require('../model/user');
 
 router.post('/signup', [
-  body('email').isEmail().normalizeEmail().custom(async function(value) {
-    const user = await User.findOne({email: value});
+  body('email').isEmail().normalizeEmail().custom(async (email) => {
+    const user = await User.findOne({email});
     return user ? new Error('User with this email alredy exist.') : true;
   }),
   body('name').isLength({min: 2}),

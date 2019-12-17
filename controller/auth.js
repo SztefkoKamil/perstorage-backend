@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../model/user');
 
 exports.signup = async (req, res, next) => {
@@ -27,6 +28,8 @@ exports.signup = async (req, res, next) => {
     password: hashedPass
   });
   const savedUser = await newUser.save();
+
+  // add user's files collection
 
   const response = {
     id: savedUser._id,
@@ -84,14 +87,37 @@ exports.login = async (req, res, next) => {
   }
 };
 
-exports.delete = (req, res, next) => {
+exports.delete = async (req, res, next) => {
   // data validation here
-  
-  // check if user exist
+  const errors = validationResult(req);
+  if(!errors.isEmpty()){
+    console.log(errors.array());
+    const error = new Error('Validation failed');
+    error.statusCode = 422;
+    error.data = errors.array();
+    throw error;
+  }
 
-  // delete user
+  try {
+  // check if user exist
+  const deletedUser = await User.findByIdAndRemove(req.userId);
+  console.log(deleted);
 
   // delete user's storage collection
+  mongoose.collection(`storage-${req.userId}`).drop();
 
   // send response for redirect
+  const response = {
+    message: 'User deleted',
+    userId: req.userId
+  }
+  res.json(response);
+
+  } catch(err) {
+    console.log(err);
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };

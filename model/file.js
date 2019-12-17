@@ -6,7 +6,8 @@ const fileSchema = new Schema({
   type: { type: String, required: true},
   name: { type: String, required: true},
   ext: { type: String, required: true},
-  path: { type: String, required: true}
+  path: { type: String, required: true},
+  size: { type: Number, required: true},
 }, { timestamps: true });
 
 

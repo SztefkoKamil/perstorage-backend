@@ -1,9 +1,10 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../model/user');
 
 exports.signup = async (req, res, next) => {
-  
+
   const errors = validationResult(req);
   if(!errors.isEmpty()){
     console.log(errors.array());
@@ -43,16 +44,44 @@ exports.signup = async (req, res, next) => {
   }
 };
 
-exports.login = (req, res, next) => {
-  // data validation here
+exports.login = async (req, res, next) => {
   
-  // check if user exist
+  const errors = validationResult(req);
+  if(!errors.isEmpty()){
+    console.log(errors.array());
+    const error = new Error('Validation failed');
+    error.statusCode = 422;
+    error.data = errors.array();
+    throw error;
+  }
 
-  // decrypt and check password
+  const email = req.body.email;
+  const password = req.body.password;
+  
+  try {
+  const user = await User.findOne({email})
 
-  // create jwt token
+  const isPassOk = await bcrypt.compare(password, user.password);
+  if(!isPassOk) {
+    const error = new Error('Wrong password');
+    error.statusCode = 401;
+    throw error;
+  }
 
-  // send response with token
+  const token = jwt.sign({
+    email: user.email,
+    userId: user._id.toString()
+  }, process.env.JWT_LOGIN_SECRET);
+
+  res.json({ token, userId: user._id.toString()});
+
+  } catch(err) {
+    console.log(err);
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };
 
 exports.delete = (req, res, next) => {

@@ -86,11 +86,30 @@ exports.updateFile = (req, res, next) => {
 exports.deleteFile = async (req, res, next) => {
   // check authorization
 
+  const fileId = req.params.id;
+
+  try {
   // delete file from Files collection
+  const deletedFile = await File.findByIdAndRemove(fileId);
 
   // delete file from user's files array
+  const user = await User.findById(req.userId);
+  user.files.pull(deletedFile._id);
+  const savedUser = await user.save();
 
   // delete file from hard disk storage
 
   // send response
+    const response = {
+      message: `File ${deletedFile.name}.${deletedFile.ext} deleted`
+    }
+    res.json(response);
+
+  } catch(err) {
+    console.log(err);
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };

@@ -69,18 +69,33 @@ exports.uploadFile = async (req, res, next) => {
 
 };
 
-exports.updateFile = (req, res, next) => {
+exports.updateFile = async (req, res, next) => {
   // check authorization
 
   const fileId = req.params.id;
+  const newName = req.body.name;
 
+  try {
   // find file in user's storage collection
-  
-  // compare fields to update
+  const file = await File.findById(fileId);
 
   // update file
+  file.name = newName;
+  const updatedFile = await file.save();
 
   //send response
+  const response = {
+    message: `File ${updatedFile.name}.${updatedFile.ext} updated`
+  }
+  res.json(response);
+
+  } catch(err) {
+    console.log(err);
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };
 
 exports.deleteFile = async (req, res, next) => {

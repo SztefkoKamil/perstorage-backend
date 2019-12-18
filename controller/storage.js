@@ -3,9 +3,32 @@ const User = require('../model/user');
 
 
 exports.getFiles = async (req, res, next) => {
+
+  try {
   // get user files from db
+  const files = await File.find({ owner: req.userId });
+
+  const response = [];
+
+  for(let file of files) {
+    const fileToSend = {
+      type: file.type,
+      name: `${file.name}.${file.ext}`,
+      path: file.path
+    }
+    response.push(fileToSend);
+  }
 
   // send files
+    res.json(response);
+
+  } catch(err) {
+    console.log(err);
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };
 
 exports.uploadFile = async (req, res, next) => {

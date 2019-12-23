@@ -16,11 +16,7 @@ router.post('/signup', [
 ], authController.signup);
 
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().custom(async function(value) {
-    const user = await User.findOne({email: value});
-    if(!user) { throw new Error('This user don\'t exist.') }
-    else { return true; }
-  }),
+  body('email').isEmail().normalizeEmail(),
   body('password').isLength({min: 6})
 ], authController.login);
 

@@ -6,49 +6,48 @@ const User = require('../model/user');
 
 
 exports.signup = async (req, res, next) => {
-
-  const errors = validationResult(req);
-  if(!errors.isEmpty()){
-    console.log(errors.array());
-    const error = new Error('Filed signup validation');
-    error.statusCode = 422;
-    error.errorCode = 902;
-    error.data = errors.array();
-    throw error;
-  }
-  
-  const email = req.body.email;
-  const name = req.body.name;
-  const password = req.body.password;
-
   try {
-  const user = User.findOne({email});
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+      console.log(errors.array());
+      const error = new Error('Failed signup validation');
+      error.statusCode = 422;
+      error.errorCode = 902;
+      error.data = errors.array();
+      throw error;
+    }
+    
+    const email = req.body.email;
+    const name = req.body.name;
+    const password = req.body.password;
 
-  if(user) {
-    const error = new Error('User with this email exist');
-    error.statusCode = 409;
-    error.errorCode = 922;
-    throw error;
-  }
+    const user = User.findOne({email});
 
-  const hashedPass = await bcrypt.hash(password, 12);
+    if(user) {
+      const error = new Error('User with this email exist');
+      error.statusCode = 409;
+      error.errorCode = 922;
+      throw error;
+    }
 
-  const newUser = new User({
-    email,
-    name,
-    password: hashedPass
-  });
-  const savedUser = await newUser.save();
-  const userId = savedUser._id.toString();
+    const hashedPass = await bcrypt.hash(password, 12);
 
-  fs.mkdirSync(`storage/user-${userId}`);
+    const newUser = new User({
+      email,
+      name,
+      password: hashedPass
+    });
+    const savedUser = await newUser.save();
+    const userId = savedUser._id.toString();
 
-  const response = {
-    id: userId,
-    email: savedUser.email,
-    name: savedUser.name
-  };
-  res.json(response);
+    fs.mkdirSync(`storage/user-${userId}`);
+
+    const response = {
+      id: userId,
+      email: savedUser.email,
+      name: savedUser.name
+    };
+    res.status(201).json(response);
 
   } catch (err) {
     console.log(err);
@@ -63,44 +62,43 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
-  
-  const errors = validationResult(req);
-  if(!errors.isEmpty()){
-    console.log(errors.array());
-    const error = new Error('Filed login validation');
-    error.statusCode = 422;
-    error.errorCode = 901;
-    error.data = errors.array();
-    throw error;
-  }
-
-  const email = req.body.email;
-  const password = req.body.password;
-  
   try {
-  const user = await User.findOne({email})
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+      console.log(errors.array());
+      const error = new Error('Failed login validation');
+      error.statusCode = 422;
+      error.errorCode = 901;
+      error.data = errors.array();
+      throw error;
+    }
 
-  if(!user) {
-    const error = new Error('Authentication filed - email not exist');
-    error.statusCode = 401;
-    error.errorCode = 912;
-    throw error;
-  } 
+    const email = req.body.email;
+    const password = req.body.password;
+    
+    const user = await User.findOne({email})
 
-  const isPassOk = await bcrypt.compare(password, user.password);
-  if(!isPassOk) {
-    const error = new Error('Authentication filed - wrong password');
-    error.statusCode = 401;
-    error.errorCode = 913;
-    throw error;
-  }
+    if(!user) {
+      const error = new Error('Authentication failed - email not exist');
+      error.statusCode = 401;
+      error.errorCode = 912;
+      throw error;
+    } 
 
-  const token = jwt.sign({
-    email: user.email,
-    userId: user._id.toString()
-  }, process.env.JWT_LOGIN_SECRET);
+    const isPassOk = await bcrypt.compare(password, user.password);
+    if(!isPassOk) {
+      const error = new Error('Authentication failed - wrong password');
+      error.statusCode = 401;
+      error.errorCode = 913;
+      throw error;
+    }
 
-  res.json({ token, userId: user._id.toString()});
+    const token = jwt.sign({
+      email: user.email,
+      userId: user._id.toString()
+    }, process.env.JWT_LOGIN_SECRET);
+
+    res.status(202).json({ token, userId: user._id.toString()});
 
   } catch(err) {
     console.log(err);
@@ -115,33 +113,32 @@ exports.login = async (req, res, next) => {
 };
 
 exports.delete = async (req, res, next) => {
-  // data validation here
-  const errors = validationResult(req);
-  if(!errors.isEmpty()){
-    console.log(errors.array());
-    const error = new Error('Validation failed');
-    error.statusCode = 422;
-    error.data = errors.array();
-    throw error;
-  }
-
   try {
-  // check if user exist
-  const deletedUser = await User.findByIdAndRemove(req.userId);
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+      console.log(errors.array());
+      const error = new Error('Validation failed');
+      error.statusCode = 422;
+      error.data = errors.array();
+      throw error;
+    }
 
-  // delete user's files from db
+    // check if user exist
+    const deletedUser = await User.findByIdAndRemove(req.userId);
 
-  // delete user's files folder from hard disk
-  fs.rmdir(`storage/user-${req.userId}`, (err) => {
-    console.log(err);
-  });
+    // delete user's files from db
 
-  // send response for redirect
-  const response = {
-    message: 'User deleted',
-    userId: req.userId
-  }
-  res.json(response);
+    // delete user's files folder from hard disk
+    fs.rmdir(`storage/user-${req.userId}`, (err) => {
+      console.log(err);
+    });
+
+    // send response for redirect
+    const response = {
+      message: 'User deleted',
+      userId: req.userId
+    }
+    res.json(response);
 
   } catch(err) {
     console.log(err);

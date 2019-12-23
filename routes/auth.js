@@ -6,21 +6,13 @@ const isAuth = require('../utils/isAuth');
 const User = require('../model/user');
 
 router.post('/signup', [
-  body('email').isEmail().normalizeEmail().custom(async (email) => {
-    const user = await User.findOne({email});
-    if(user) throw new Error('User with this email alredy exist.'); 
-    else return true;
-  }),
+  body('email').isEmail().normalizeEmail(),
   body('name').isLength({min: 2}),
   body('password').isLength({min: 6})
 ], authController.signup);
 
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().custom(async function(value) {
-    const user = await User.findOne({email: value});
-    if(!user) { throw new Error('This user don\'t exist.') }
-    else { return true; }
-  }),
+  body('email').isEmail().normalizeEmail(),
   body('password').isLength({min: 6})
 ], authController.login);
 

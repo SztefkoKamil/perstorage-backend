@@ -31,7 +31,6 @@ exports.signup = async (req, res, next) => {
     }
 
     const hashedPass = await bcrypt.hash(password, 12);
-
     const newUser = new User({
       email,
       name,

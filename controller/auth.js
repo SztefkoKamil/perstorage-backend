@@ -2,7 +2,6 @@ const fs = require('fs');
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const User = require('../model/user');
 
 
@@ -11,8 +10,9 @@ exports.signup = async (req, res, next) => {
   const errors = validationResult(req);
   if(!errors.isEmpty()){
     console.log(errors.array());
-    const error = new Error('Validation failed');
+    const error = new Error('Filed signup validation');
     error.statusCode = 422;
+    error.errorCode = 902;
     error.data = errors.array();
     throw error;
   }
@@ -22,6 +22,15 @@ exports.signup = async (req, res, next) => {
   const password = req.body.password;
 
   try {
+  const user = User.findOne({email});
+
+  if(user) {
+    const error = new Error('User with this email exist');
+    error.statusCode = 409;
+    error.errorCode = 922;
+    throw error;
+  }
+
   const hashedPass = await bcrypt.hash(password, 12);
 
   const newUser = new User({
@@ -46,6 +55,9 @@ exports.signup = async (req, res, next) => {
     if (!err.statusCode) {
       err.statusCode = 500;
     }
+    if (!err.errorCode) {
+      err.errorCode = 921;
+    }
     next(err);
   }
 };
@@ -55,8 +67,9 @@ exports.login = async (req, res, next) => {
   const errors = validationResult(req);
   if(!errors.isEmpty()){
     console.log(errors.array());
-    const error = new Error('Validation failed');
+    const error = new Error('Filed login validation');
     error.statusCode = 422;
+    error.errorCode = 901;
     error.data = errors.array();
     throw error;
   }
@@ -67,10 +80,18 @@ exports.login = async (req, res, next) => {
   try {
   const user = await User.findOne({email})
 
+  if(!user) {
+    const error = new Error('Authentication filed - email not exist');
+    error.statusCode = 401;
+    error.errorCode = 912;
+    throw error;
+  } 
+
   const isPassOk = await bcrypt.compare(password, user.password);
   if(!isPassOk) {
-    const error = new Error('Wrong password');
+    const error = new Error('Authentication filed - wrong password');
     error.statusCode = 401;
+    error.errorCode = 913;
     throw error;
   }
 
@@ -85,6 +106,9 @@ exports.login = async (req, res, next) => {
     console.log(err);
     if (!err.statusCode) {
       err.statusCode = 500;
+    }
+    if (!err.errorCode) {
+      err.errorCode = 911;
     }
     next(err);
   }
@@ -123,6 +147,9 @@ exports.delete = async (req, res, next) => {
     console.log(err);
     if (!err.statusCode) {
       err.statusCode = 500;
+    }
+    if (!err.errorCode) {
+      err.errorCode = 927;
     }
     next(err);
   }

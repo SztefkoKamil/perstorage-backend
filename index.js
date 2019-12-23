@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 
 const authRouter = require('./routes/auth');
 const storageRouter = require('./routes/storage');
+const errorHandler = require('./utils/errorHandler');
 
 dotenv.config();
 
@@ -24,19 +25,14 @@ app.use((req, res, next) => {
 app.use(authRouter);
 app.use(storageRouter);
 
-app.use((error, req, res, next) => {
-  console.log(error);
-  const status = error.statusCode || 500;
-  const message = error.message;
-  const data = error.data;
-  res.status(status).json({message, data});
-});
+app.use(errorHandler);
 
 
 const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@perstorage-qxol9.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
 
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(result => {
+  // console.log(result.connections[0]);
   app.listen(process.env.PORT, () => {
     console.log(`Listen at ${process.env.PORT}`);
   });

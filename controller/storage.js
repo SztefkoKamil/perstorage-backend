@@ -14,7 +14,7 @@ exports.getFiles = async (req, res, next) => {
     const fileToSend = {
       type: file.type,
       name: `${file.name}.${file.ext}`,
-      path: file.path
+      path: `${process.env.HOST}:${process.env.PORT}/${file.path}`
     }
     response.push(fileToSend);
   }

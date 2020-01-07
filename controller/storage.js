@@ -48,7 +48,7 @@ exports.uploadFile = async (req, res, next) => {
 
     // check file type
     if(ext === 'jpeg' || ext === 'jpg' || ext === 'png') type = 'image';
-    else if(ext === 'rar' || ext === 'zip') type = 'compressed';
+    else if(ext === 'rar' || ext === 'zip' || ext === '7z') type = 'compressed';
     else if(ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt') type = 'document';
     
     // add file to DB

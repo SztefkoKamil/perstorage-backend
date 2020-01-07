@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
+const multer = require('multer');
 const mongoose = require('mongoose');
 
 const authRouter = require('./routes/auth');
@@ -10,10 +11,16 @@ const errorHandler = require('./utils/errorHandler');
 
 dotenv.config();
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => { cb(null, `storage/user-${req.query.userid}`); },
+  filename: (req, file, cb) => { cb(null, file.originalname); }
+});
+
 const app = express();
 
 app.use('/storage', express.static(path.join(__dirname, 'storage')));
 app.use(bodyParser.json());
+app.use(multer({ storage: fileStorage}).any('files', 10));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');

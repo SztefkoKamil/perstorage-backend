@@ -32,11 +32,6 @@ exports.getFiles = async (req, res, next) => {
 };
 
 exports.uploadFile = async (req, res, next) => {
-  // check authorization
-
-  // to delete in future
-  req.files = req.body.files;
-  
   try {
     for(let i in req.files) {
 
@@ -71,16 +66,19 @@ exports.uploadFile = async (req, res, next) => {
     const user = await User.findById(req.userId);
     user.files.push(savedFile._id);
     user.save();
-
-    // add file to hard disk storage
-
     }
 
+    // prepare response
+    const filesCounter = req.files.length;
+    const response = {};
+    if(filesCounter === 1) {
+      response.message = '1 new file added';
+    } else {
+      response.message = `${req.files.length} new files added`;
+    }
+      
     // send response
-    const response = {
-      message: `${req.files.length} new files added`
-    }
-    res.json(response);
+    res.status(201).json(response);
 
   } catch(err) {
     console.log(err);

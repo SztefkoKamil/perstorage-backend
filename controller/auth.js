@@ -21,8 +21,8 @@ exports.signup = async (req, res, next) => {
     const name = req.body.name;
     const password = req.body.password;
 
-    const user = User.findOne({email});
-
+    const user = await User.findOne({email});
+    
     if(user) {
       const error = new Error('User with this email exist');
       error.statusCode = 409;

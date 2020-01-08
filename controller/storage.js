@@ -12,6 +12,7 @@ exports.getFiles = async (req, res, next) => {
 
   for(let file of files) {
     const fileToSend = {
+      id: file._id.toString(),
       type: file.type,
       name: `${file.name}.${file.ext}`,
       path: `${process.env.HOST}:${process.env.PORT}/${file.path}`

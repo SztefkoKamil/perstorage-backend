@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const File = require('../model/file');
 const User = require('../model/user');
 
@@ -121,26 +123,20 @@ exports.updateFile = async (req, res, next) => {
 };
 
 exports.deleteFile = async (req, res, next) => {
-  // check authorization
-
   const fileId = req.params.id;
 
   try {
-  // delete file from Files collection
   const deletedFile = await File.findByIdAndRemove(fileId);
 
-  // delete file from user's files array
   const user = await User.findById(req.userId);
   user.files.pull(deletedFile._id);
-  const savedUser = await user.save();
+  await user.save();
 
-  // delete file from hard disk storage
+  const filePath = path.join(__dirname + '/../' + deletedFile.path);
+  fs.unlink(filePath, (err) => { if(err) console.log(err); });
 
-  // send response
-    const response = {
-      message: `File ${deletedFile.name}.${deletedFile.ext} deleted`
-    }
-    res.json(response);
+  const response = { message: `File ${deletedFile.name}.${deletedFile.ext} deleted` };
+  res.status(202).json(response);
 
   } catch(err) {
     console.log(err);

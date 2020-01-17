@@ -7,15 +7,11 @@ const isAuth = require('../utils/isAuth');
 
 router.get('/files', isAuth, storageController.getFiles);
 
-router.post('/file', isAuth, storageController.uploadFile);
+router.post('/files', isAuth, storageController.uploadFile);
 
-router.put('/file/:id', isAuth, [
-  param('id').isMongoId()
-], storageController.updateFile);
+router.put('/file', isAuth, storageController.updateFile);
 
-router.delete('/file/:id', isAuth, [
-  param('id').isMongoId()
-], storageController.deleteFile);
+router.delete('/file/:id', isAuth, [ param('id').isMongoId() ], storageController.deleteFile);
 
 
 module.exports = router;

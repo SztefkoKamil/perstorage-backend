@@ -94,24 +94,19 @@ exports.uploadFile = async (req, res, next) => {
 };
 
 exports.updateFile = async (req, res, next) => {
-  // check authorization
-
-  const fileId = req.params.id;
+  const fileId = req.body.id;
   const newName = req.body.name;
 
   try {
-  // find file in user's storage collection
   const file = await File.findById(fileId);
 
-  // update file
   file.name = newName;
   const updatedFile = await file.save();
 
-  //send response
   const response = {
     message: `File ${updatedFile.name}.${updatedFile.ext} updated`
   }
-  res.json(response);
+  res.status(202).json(response);
 
   } catch(err) {
     console.log(err);

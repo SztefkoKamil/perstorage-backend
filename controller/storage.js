@@ -94,13 +94,16 @@ exports.uploadFile = async (req, res, next) => {
 };
 
 exports.updateFile = async (req, res, next) => {
-  const fileId = req.body.id;
-  const newName = req.body.name;
+  const newFile = req.body;
 
   try {
-  const file = await File.findById(fileId);
+  const file = await File.findById(newFile.id);
 
-  file.name = newName;
+  const newPath = `storage/user-${req.userId}/${newFile.name}${newFile.ext}`;
+  fs.renameSync(file.path, newPath);
+
+  file.name = newFile.name;
+  file.path = newPath;
   const updatedFile = await file.save();
 
   const response = {

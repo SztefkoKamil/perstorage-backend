@@ -36,39 +36,47 @@ exports.getFiles = async (req, res, next) => {
 
 exports.uploadFile = async (req, res, next) => {
   try {
-    for(let i in req.files) {
-
-    const fullName = req.files[i].originalname;
-    const nameParts = fullName.split('.');
-    let name, type;
-    const ext = nameParts[nameParts.length-1];
-    nameParts.pop();
-    if(nameParts.length > 1) {
-      name = nameParts.join('.');
-    } else {
-      name = nameParts[0];
-    }
-
-    // check file type
-    if(ext === 'jpeg' || ext === 'jpg' || ext === 'png') type = 'image';
-    else if(ext === 'rar' || ext === 'zip' || ext === '7z') type = 'compressed';
-    else if(ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt') type = 'document';
-    
-    // add file to DB
-    const newFile = new File({
-      owner: req.userId,
-      type,
-      name,
-      ext,
-      path: `storage/user-${req.userId}/${fullName}`,
-      size: req.files[i].size
+    const userFiles = await File.find({owner: req.userId}, {_id: 0, name: 1, ext: 1});
+    const userFilesNames = userFiles.map(i => {
+      const newItem = `${i.name}.${i.ext}`;
+      return newItem;
     });
-    const savedFile = await newFile.save();
 
-    // add file to user's array
-    const user = await User.findById(req.userId);
-    user.files.push(savedFile._id);
-    user.save();
+    for(let i in req.files) {
+      const fullName = req.files[i].originalname;
+      const nameParts = fullName.split('.');
+      let name, type;
+      const ext = nameParts[nameParts.length-1];
+      nameParts.pop();
+      if(nameParts.length > 1) {
+        name = nameParts.join('.');
+      } else {
+        name = nameParts[0];
+      }
+
+      // check if file exist in DB
+      if(userFilesNames.includes(fullName)) continue;
+
+      // check file type
+      if(ext === 'jpeg' || ext === 'jpg' || ext === 'png') type = 'image';
+      else if(ext === 'rar' || ext === 'zip' || ext === '7z') type = 'compressed';
+      else if(ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt') type = 'document';
+      
+      // add file to DB
+      const newFile = new File({
+        owner: req.userId,
+        type,
+        name,
+        ext,
+        path: `storage/user-${req.userId}/${fullName}`,
+        size: req.files[i].size
+      });
+      const savedFile = await newFile.save();
+
+      // add file to user's array
+      const user = await User.findById(req.userId);
+      user.files.push(savedFile._id);
+      user.save();
     }
 
     // prepare response

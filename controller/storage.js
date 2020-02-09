@@ -5,38 +5,43 @@ const User = require('../model/user');
 
 
 exports.getFiles = async (req, res, next) => {
-
   try {
-  // get user files from db
-  const files = await File.find({ owner: req.userId });
+    const files = await File.find({ owner: req.userId });
+    const response = [];
 
-  const response = [];
-
-  for(let file of files) {
-    const fileToSend = {
-      id: file._id.toString(),
-      type: file.type,
-      name: `${file.name}.${file.ext}`,
-      path: `${process.env.HOST}:${process.env.PORT}/${file.path}`
+    for(let file of files) {
+      const fileToSend = {
+        id: file._id.toString(),
+        type: file.type,
+        name: `${file.name}.${file.ext}`,
+        path: `${process.env.HOST}:${process.env.PORT}/${file.path}`
+      }
+      response.push(fileToSend);
     }
-    response.push(fileToSend);
-  }
 
-  // send files
     res.json(response);
 
   } catch(err) {
     console.log(err);
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
+    if (!err.statusCode) err.statusCode = 500;
     next(err);
   }
 };
 
 exports.uploadFile = async (req, res, next) => {
+  const filesToResponse = [];
+
   try {
     const userFiles = await File.find({owner: req.userId}, {_id: 0, name: 1, ext: 1});
+    if (userFiles.length >= 20) {
+      const response = {
+        message: 'You can\'t add new files. Number of files limited to 20',
+        addedFiles: []
+      }
+      res.status(200).json(response);
+      return;
+    }
+
     const userFilesNames = userFiles.map(i => {
       const newItem = `${i.name}.${i.ext}`;
       return newItem;
@@ -54,15 +59,12 @@ exports.uploadFile = async (req, res, next) => {
         name = nameParts[0];
       }
 
-      // check if file exist in DB
       if(userFilesNames.includes(fullName)) continue;
 
-      // check file type
       if(ext === 'jpeg' || ext === 'jpg' || ext === 'png') type = 'image';
       else if(ext === 'rar' || ext === 'zip' || ext === '7z') type = 'compressed';
       else if(ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt') type = 'document';
       
-      // add file to DB
       const newFile = new File({
         owner: req.userId,
         type,
@@ -73,29 +75,32 @@ exports.uploadFile = async (req, res, next) => {
       });
       const savedFile = await newFile.save();
 
-      // add file to user's array
+      const fileToResponse = {
+        id: savedFile._id.toString(),
+        type: savedFile.type,
+        name: `${savedFile.name}.${savedFile.ext}`,
+        path: `${process.env.HOST}:${process.env.PORT}/${savedFile.path}`
+      };
+      filesToResponse.push(fileToResponse);
+
       const user = await User.findById(req.userId);
       user.files.push(savedFile._id);
       user.save();
     }
 
-    // prepare response
     const filesCounter = req.files.length;
-    const response = {};
+    const response = { addedFiles: filesToResponse };
     if(filesCounter === 1) {
       response.message = '1 new file added';
     } else {
       response.message = `${req.files.length} new files added`;
     }
-      
-    // send response
+
     res.status(201).json(response);
 
   } catch(err) {
     console.log(err);
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
+    if (!err.statusCode) err.statusCode = 500;
     next(err);
   }
 
@@ -105,25 +110,21 @@ exports.updateFile = async (req, res, next) => {
   const newFile = req.body;
 
   try {
-  const file = await File.findById(newFile.id);
+    const file = await File.findById(newFile.id);
 
-  const newPath = `storage/user-${req.userId}/${newFile.name}${newFile.ext}`;
-  fs.renameSync(file.path, newPath);
+    const newPath = `storage/user-${req.userId}/${newFile.name}${newFile.ext}`;
+    fs.renameSync(file.path, newPath);
 
-  file.name = newFile.name;
-  file.path = newPath;
-  const updatedFile = await file.save();
+    file.name = newFile.name;
+    file.path = newPath;
+    const updatedFile = await file.save();
 
-  const response = {
-    message: `File ${updatedFile.name}.${updatedFile.ext} updated`
-  }
-  res.status(202).json(response);
+    const response = { message: `File "${updatedFile.name}.${updatedFile.ext}" updated` };
+    res.status(202).json(response);
 
   } catch(err) {
     console.log(err);
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
+    if (!err.statusCode) err.statusCode = 500;
     next(err);
   }
 };
@@ -132,23 +133,21 @@ exports.deleteFile = async (req, res, next) => {
   const fileId = req.params.id;
 
   try {
-  const deletedFile = await File.findByIdAndRemove(fileId);
+    const deletedFile = await File.findByIdAndRemove(fileId);
 
-  const user = await User.findById(req.userId);
-  user.files.pull(deletedFile._id);
-  await user.save();
+    const user = await User.findById(req.userId);
+    user.files.pull(deletedFile._id);
+    await user.save();
 
-  const filePath = path.join(__dirname + '/../' + deletedFile.path);
-  fs.unlink(filePath, (err) => { if(err) console.log(err); });
+    const filePath = path.join(__dirname + '/../' + deletedFile.path);
+    fs.unlink(filePath, (err) => { if(err) console.log(err); });
 
-  const response = { message: `File ${deletedFile.name}.${deletedFile.ext} deleted` };
-  res.status(202).json(response);
+    const response = { message: `File "${deletedFile.name}.${deletedFile.ext}" deleted` };
+    res.status(202).json(response);
 
   } catch(err) {
     console.log(err);
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
+    if (!err.statusCode) err.statusCode = 500;
     next(err);
   }
 };

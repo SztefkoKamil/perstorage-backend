@@ -12,8 +12,14 @@ exports.signup = async (req, res, next) => {
       console.log(errors.array());
       const error = new Error('Failed signup validation');
       error.statusCode = 422;
-      error.errorCode = 902;
       error.data = errors.array();
+      throw error;
+    }
+
+    const usersNumber = await User.find().countDocuments();
+    if(usersNumber >= 10) {
+      const error = new Error('Sorry, too much users. Please contact me: sztefkokamil@gmail.com');
+      error.statusCode = 422;
       throw error;
     }
     
@@ -26,7 +32,6 @@ exports.signup = async (req, res, next) => {
     if(user) {
       const error = new Error('User with this email exist');
       error.statusCode = 409;
-      error.errorCode = 922;
       throw error;
     }
 
@@ -53,9 +58,6 @@ exports.signup = async (req, res, next) => {
     if (!err.statusCode) {
       err.statusCode = 500;
     }
-    if (!err.errorCode) {
-      err.errorCode = 921;
-    }
     next(err);
   }
 };
@@ -67,7 +69,6 @@ exports.login = async (req, res, next) => {
       console.log(errors.array());
       const error = new Error('Failed login validation');
       error.statusCode = 422;
-      error.errorCode = 901;
       error.data = errors.array();
       throw error;
     }
@@ -80,7 +81,6 @@ exports.login = async (req, res, next) => {
     if(!user) {
       const error = new Error('Authentication failed - email not exist');
       error.statusCode = 401;
-      error.errorCode = 912;
       throw error;
     } 
 
@@ -88,7 +88,6 @@ exports.login = async (req, res, next) => {
     if(!isPassOk) {
       const error = new Error('Authentication failed - wrong password');
       error.statusCode = 401;
-      error.errorCode = 913;
       throw error;
     }
 
@@ -103,9 +102,6 @@ exports.login = async (req, res, next) => {
     console.log(err);
     if (!err.statusCode) {
       err.statusCode = 500;
-    }
-    if (!err.errorCode) {
-      err.errorCode = 911;
     }
     next(err);
   }
@@ -122,17 +118,14 @@ exports.delete = async (req, res, next) => {
       throw error;
     }
 
-    // check if user exist
     const deletedUser = await User.findByIdAndRemove(req.userId);
 
     // delete user's files from db
 
-    // delete user's files folder from hard disk
     fs.rmdir(`storage/user-${req.userId}`, (err) => {
       console.log(err);
     });
 
-    // send response for redirect
     const response = {
       message: 'User deleted',
       userId: req.userId
@@ -143,9 +136,6 @@ exports.delete = async (req, res, next) => {
     console.log(err);
     if (!err.statusCode) {
       err.statusCode = 500;
-    }
-    if (!err.errorCode) {
-      err.errorCode = 927;
     }
     next(err);
   }

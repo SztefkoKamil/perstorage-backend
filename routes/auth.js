@@ -16,8 +16,6 @@ router.post('/login', [
   body('password').isLength({min: 6})
 ], authController.login);
 
-router.delete('/user/:id', isAuth, [
-  param('id').isLength({min: 24, max: 24})
-], authController.delete)
+router.delete('/delete-user', isAuth, authController.delete);
 
 module.exports = router;

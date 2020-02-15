@@ -1,8 +1,10 @@
 const fs = require('fs');
+const fsExtra = require('fs-extra');
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../model/user');
+const File = require('../model/file');
 
 
 exports.signup = async (req, res, next) => {
@@ -109,28 +111,14 @@ exports.login = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if(!errors.isEmpty()){
-      console.log(errors.array());
-      const error = new Error('Validation failed');
-      error.statusCode = 422;
-      error.data = errors.array();
-      throw error;
-    }
+    await User.findByIdAndRemove(req.userId);
+    await File.deleteMany({ owner: req.userId});
 
-    const deletedUser = await User.findByIdAndRemove(req.userId);
-
-    // delete user's files from db
-
-    fs.rmdir(`storage/user-${req.userId}`, (err) => {
+    fsExtra.remove(`storage/user-${req.userId}`, (err) => {
       console.log(err);
     });
 
-    const response = {
-      message: 'User deleted',
-      userId: req.userId
-    }
-    res.json(response);
+    res.status(202);
 
   } catch(err) {
     console.log(err);

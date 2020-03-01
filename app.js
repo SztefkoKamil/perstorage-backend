@@ -34,10 +34,7 @@ app.use(storageRouter);
 
 app.use(errorHandler);
 
-
-const mongoURI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@perstorage-qxol9.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
-
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(result => {
   app.listen(process.env.PORT, () => {
     console.log(`Listen at ${process.env.PORT}`);

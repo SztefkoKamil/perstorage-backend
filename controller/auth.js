@@ -115,10 +115,11 @@ exports.delete = async (req, res, next) => {
     await File.deleteMany({ owner: req.userId});
 
     fsExtra.remove(`storage/user-${req.userId}`, (err) => {
-      console.log(err);
+      if(err) console.log(err);
     });
 
-    res.status(202);
+    const response = { message: 'User deleted' };
+    res.status(202).json(response);
 
   } catch(err) {
     console.log(err);

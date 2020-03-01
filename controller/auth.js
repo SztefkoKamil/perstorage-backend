@@ -110,6 +110,12 @@ exports.login = async (req, res, next) => {
 };
 
 exports.delete = async (req, res, next) => {
+  if(process.env.GUEST === req.userId) {
+    const response = { message: 'You can\'t delete Guest account.' };
+    res.status(403).json(response);
+    return;
+  }
+
   try {
     await User.findByIdAndRemove(req.userId);
     await File.deleteMany({ owner: req.userId});

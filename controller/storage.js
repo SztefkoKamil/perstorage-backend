@@ -67,7 +67,7 @@ exports.uploadFile = async (req, res, next) => {
 
       if(ext === 'jpeg' || ext === 'jpg' || ext === 'png') type = 'image';
       else if(ext === 'rar' || ext === 'zip' || ext === '7z') type = 'compressed';
-      else if(ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt') type = 'document';
+      else if(ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt' || ext === 'TXT') type = 'document';
       
       const newFile = new File({
         owner: req.userId,

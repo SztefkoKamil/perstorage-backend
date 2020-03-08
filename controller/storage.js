@@ -22,7 +22,7 @@ exports.getFiles = async (req, res, next) => {
       response.push(fileToSend);
     }
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (err) {
     console.log(err);
     if (!err.statusCode) err.statusCode = 500;
@@ -113,10 +113,16 @@ exports.uploadFiles = async (req, res, next) => {
 
 exports.downloadFile = async (req, res, next) => {
   const fileId = req.params.id;
-  const file = await File.findById(fileId);
-  res.download(file.path, file.name, err => {
-    if (err) console.log(err);
-  });
+
+  try {
+    const file = await File.findById(fileId);
+    res.status(200).download(file.path, file.name, err => {
+      if (err) console.log(err);
+    });
+  } catch (err) {
+    if (!err.statusCode) err.statusCode = 500;
+    next(err);
+  }
 };
 
 exports.updateFile = async (req, res, next) => {
@@ -135,7 +141,6 @@ exports.updateFile = async (req, res, next) => {
     const response = { message: `File "${updatedFile.name}.${updatedFile.ext}" updated` };
     res.status(202).json(response);
   } catch (err) {
-    console.log(err);
     if (!err.statusCode) err.statusCode = 500;
     next(err);
   }
@@ -159,7 +164,6 @@ exports.deleteFile = async (req, res, next) => {
     const response = { message: `File "${deletedFile.name}.${deletedFile.ext}" deleted` };
     res.status(202).json(response);
   } catch (err) {
-    console.log(err);
     if (!err.statusCode) err.statusCode = 500;
     next(err);
   }

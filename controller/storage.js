@@ -12,13 +12,9 @@ exports.getFiles = async (req, res, next) => {
       const fileToSend = {
         id: file._id.toString(),
         type: file.type,
-        name: `${file.name}.${file.ext}`
+        name: `${file.name}.${file.ext}`,
+        path: `${process.env.HOST}/${file.path}`
       };
-      if (process.env.HOST === 'http://localhost') {
-        fileToSend.path = `${process.env.HOST}:${process.env.PORT}/${file.path}`;
-      } else {
-        fileToSend.path = `${process.env.HOST}/${file.path}`;
-      }
       response.push(fileToSend);
     }
 
@@ -81,13 +77,9 @@ exports.uploadFiles = async (req, res, next) => {
       const fileToResponse = {
         id: savedFile._id.toString(),
         type: savedFile.type,
-        name: `${savedFile.name}.${savedFile.ext}`
+        name: `${savedFile.name}.${savedFile.ext}`,
+        path: `${process.env.HOST}/${savedFile.path}`
       };
-      if (process.env.HOST === 'http://localhost') {
-        fileToResponse.path = `${process.env.HOST}:${process.env.PORT}/${savedFile.path}`;
-      } else {
-        fileToResponse.path = `${process.env.HOST}/${savedFile.path}`;
-      }
       filesToResponse.push(fileToResponse);
 
       const user = await User.findById(req.userId);

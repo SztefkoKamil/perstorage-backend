@@ -40,7 +40,7 @@ exports.signup = async (req, res, next) => {
     const newUser = new User({
       email,
       name,
-      password: hashedPass
+      password: hashedPass,
     });
     const savedUser = await newUser.save();
     const userId = savedUser._id.toString();
@@ -50,7 +50,7 @@ exports.signup = async (req, res, next) => {
     const response = {
       id: userId,
       email: savedUser.email,
-      name: savedUser.name
+      name: savedUser.name,
     };
     res.status(201).json(response);
   } catch (err) {
@@ -76,7 +76,6 @@ exports.login = async (req, res, next) => {
     const password = req.body.password;
 
     const user = await User.findOne({ email });
-
     if (!user) {
       const error = new Error('Authentication failed - email not exist');
       error.statusCode = 401;
@@ -93,7 +92,7 @@ exports.login = async (req, res, next) => {
     const token = jwt.sign(
       {
         email: user.email,
-        userId: user._id.toString()
+        userId: user._id.toString(),
       },
       process.env.JWT_LOGIN_SECRET
     );
@@ -104,6 +103,7 @@ exports.login = async (req, res, next) => {
       err.statusCode = 500;
     }
     next(err);
+    return err;
   }
 };
 

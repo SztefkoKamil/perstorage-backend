@@ -4,7 +4,7 @@
   "description": "Backend part of Perstorage application.",
   "main": "app.js",
   "scripts": {
-    "test": "test",
+    "test": "jest",
     "dev": "nodemon app.js"
   },
   "repository": {
@@ -32,6 +32,8 @@
     "multer": "^1.4.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.2"
+    "jest": "^25.3.0",
+    "nodemon": "^2.0.2",
+    "sinon": "^9.0.2"
   }
 }

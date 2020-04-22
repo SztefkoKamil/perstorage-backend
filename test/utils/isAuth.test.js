@@ -1,5 +1,6 @@
 const isAuth = require('../../utils/isAuth');
 const jwt = require('jsonwebtoken');
+const process = require('process');
 const sinon = require('sinon');
 
 const req = {};
@@ -26,28 +27,51 @@ describe('/utils/isAuth.js - binded to call', () => {
 });
 
 describe('/utils/isAuth.js - with stubbed jwt', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
   it('should get Authorization header from request', () => {
-    req.get = jest.fn((header) => header);
-    sinon.stub(jwt, 'verify');
-    jwt.verify.returns({ userId: 'good-id' });
+    req.get = jest.fn(arg => 'Bearer token');
+    sinon.stub(jwt, 'verify').returns({ userId: 'good-id' });
 
     isAuth(req, {}, () => {});
 
     expect(req.get).toHaveBeenCalledWith('Authorization');
   });
 
-  it('should call jwt.verify() method', () => {
-    req.get = () => 'Bearer good-token';
+  it('should call jwt.verify() method with proper arguments', () => {
+    req.get = () => 'Bearer token';
+    sinon.replace(
+      jwt,
+      'verify',
+      jest.fn((arg1, arg2) => {
+        return { userId: 'good-id' };
+      })
+    );
+    sinon.replace(process, 'env', { JWT_LOGIN_SECRET: 'jwt-login-secret' });
 
     isAuth(req, {}, () => {});
 
-    expect(jwt.verify.called).toBe(true);
+    expect(jwt.verify).toHaveBeenCalledWith('token', 'jwt-login-secret');
   });
 
-  it('should yield req.userId after decoding token', () => {
+  it('should req have userId property after decoding token', () => {
+    req.get = () => 'Bearer token';
+    sinon.stub(jwt, 'verify').returns({ userId: 'good-id' });
+
     isAuth(req, {}, () => {});
 
     expect(req).toHaveProperty('userId', 'good-id');
-    jwt.verify.restore();
+  });
+
+  it('should call next() if Authorization success', () => {
+    req.get = () => 'Bearer token';
+    sinon.stub(jwt, 'verify').returns({ userId: 'good-id' });
+    const nextFake = jest.fn(() => {});
+
+    isAuth(req, {}, nextFake);
+
+    expect(nextFake).toHaveBeenCalled();
   });
 });

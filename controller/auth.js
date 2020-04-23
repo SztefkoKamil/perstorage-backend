@@ -58,6 +58,7 @@ exports.signup = async (req, res, next) => {
       err.statusCode = 500;
     }
     next(err);
+    return err;
   }
 };
 

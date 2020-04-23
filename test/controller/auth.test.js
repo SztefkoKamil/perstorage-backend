@@ -248,3 +248,86 @@ describe('/controller/auth.js - login', () => {
     );
   });
 });
+
+describe.only('/controller/auth.js - delete', () => {
+  const req = { userId: 'user-id' };
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should check if account to delete is Guest account', async () => {
+    const res = {
+      status: jest.fn(arg => res),
+      json: jest.fn(arg => {}),
+    };
+    sinon.replace(process, 'env', { GUEST: req.userId });
+
+    await auth.delete(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "You can't delete Guest account." })
+    );
+  });
+
+  it('should call User.findByIdAndRemove() with proper argument', async () => {
+    const findByIdAndRemoveFake = jest.fn(arg => {});
+    const res = { status: () => res, json: () => {} };
+    sinon.replace(User, 'findByIdAndRemove', findByIdAndRemoveFake);
+    sinon.stub(File, 'deleteMany');
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, res, () => {});
+
+    expect(findByIdAndRemoveFake).toHaveBeenCalledWith(req.userId);
+  });
+
+  it('should call File.deleteMany() with proper argument', async () => {
+    const deleteManyFake = jest.fn(arg => {});
+    const res = { status: () => res, json: () => {} };
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.replace(File, 'deleteMany', deleteManyFake);
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, res, () => {});
+
+    expect(deleteManyFake).toHaveBeenCalledWith({ owner: req.userId });
+  });
+
+  it('should call fsExtra.remove() with proper arguments', async () => {
+    const removeFake = jest.fn(arg => {});
+    const res = { status: () => res, json: () => {} };
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.stub(File, 'deleteMany');
+    sinon.replace(fsExtra, 'remove', removeFake);
+
+    await auth.delete(req, res, () => {});
+
+    expect(removeFake).toHaveBeenCalledWith(`storage/user-${req.userId}`, expect.any(Function));
+  });
+
+  it('should call res.status().json() with proper arguments if no errors occur', async () => {
+    const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.stub(File, 'deleteMany');
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({ message: 'User deleted' });
+  });
+
+  it('should call next() with error with statusCode: 500 if some arror occur', async () => {
+    const nextFake = jest.fn(arg => {});
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.stub(File, 'deleteMany').throws('undefined-error');
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, {}, nextFake);
+
+    expect(nextFake).toHaveBeenCalledWith(expect.any(Error));
+    expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
+  });
+});

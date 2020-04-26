@@ -295,3 +295,43 @@ describe('/controller/storage.js - uploadFiles', () => {
     expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
   });
 });
+
+describe('/controller/storage.js - downloadFile', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should call File.findById() with proper argument', async () => {
+    const req = { params: { id: 'file-id' } };
+    const res = { status: () => res, download: () => {} };
+    const file = { path: 'path/to/file', name: 'file-name' };
+    const stub = sinon.stub(File, 'findById').returns(file);
+
+    await storage.downloadFile(req, res, () => {});
+
+    sinon.assert.calledOnceWithExactly(stub, req.params.id);
+  });
+
+  it('should call res.status().download() with proper arguments', async () => {
+    const req = { params: { id: 'file-id' } };
+    const res = { status: jest.fn(arg => res), download: jest.fn((arg1, arg2, arg3) => {}) };
+    const file = { path: 'path/to/file', name: 'file-name' };
+    sinon.stub(File, 'findById').returns(file);
+
+    await storage.downloadFile(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.download).toHaveBeenCalledWith(file.path, file.name, expect.any(Function));
+  });
+
+  it('should call next() with error with statusCode: 500 if some error occur', async () => {
+    const req = { params: { id: 'file-id' } };
+    const nextFake = jest.fn(arg => {});
+    sinon.stub(File, 'findById').throws();
+
+    await storage.downloadFile(req, {}, nextFake);
+
+    expect(nextFake).toHaveBeenCalledWith(expect.any(Error));
+    expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
+  });
+});

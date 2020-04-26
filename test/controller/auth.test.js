@@ -249,7 +249,7 @@ describe('/controller/auth.js - login', () => {
   });
 });
 
-describe.only('/controller/auth.js - delete', () => {
+describe('/controller/auth.js - delete', () => {
   const req = { userId: 'user-id' };
 
   afterEach(() => {

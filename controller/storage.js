@@ -13,7 +13,7 @@ exports.getFiles = async (req, res, next) => {
         id: file._id.toString(),
         type: file.type,
         name: `${file.name}.${file.ext}`,
-        path: `${process.env.HOST}/${file.path}`
+        path: `${process.env.HOST}/${file.path}`,
       };
       response.push(fileToSend);
     }
@@ -34,7 +34,7 @@ exports.uploadFiles = async (req, res, next) => {
     if (userFiles.length >= 20) {
       const response = {
         message: "You can't add new files. Number of files limited to 20",
-        addedFiles: []
+        addedFiles: [],
       };
       res.status(200).json(response);
       return;
@@ -70,7 +70,7 @@ exports.uploadFiles = async (req, res, next) => {
         name,
         ext,
         path: `storage/user-${req.userId}/${fullName}`,
-        size: req.files[i].size
+        size: req.files[i].size,
       });
       const savedFile = await newFile.save();
 
@@ -78,7 +78,7 @@ exports.uploadFiles = async (req, res, next) => {
         id: savedFile._id.toString(),
         type: savedFile.type,
         name: `${savedFile.name}.${savedFile.ext}`,
-        path: `${process.env.HOST}/${savedFile.path}`
+        path: `${process.env.HOST}/${savedFile.path}`,
       };
       filesToResponse.push(fileToResponse);
 

@@ -335,3 +335,82 @@ describe('/controller/storage.js - downloadFile', () => {
     expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
   });
 });
+
+describe('/controller/storage.js - updateFile', () => {
+  const req = {
+    userId: 'user-id',
+    body: {
+      id: 'file-id',
+      name: 'updated-name',
+      ext: 'file-ext',
+    },
+  };
+  const res = { status: () => res, json: () => {} };
+  const file = {
+    path: 'path/to/file',
+    save: () => updatedFile,
+  };
+  const updatedFile = {
+    name: 'updated-file',
+    ext: 'rar',
+  };
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should call File.findById() with proper arguments', async () => {
+    const stub = sinon.stub(File, 'findById').returns({ ...file });
+    sinon.stub(fs, 'renameSync');
+
+    await storage.updateFile(req, res, () => {});
+
+    sinon.assert.calledOnceWithExactly(stub, req.body.id);
+  });
+
+  it('should call fs.renameSync() with proper arguments', async () => {
+    const newPath = `storage/user-${req.userId}/${req.body.name}${req.body.ext}`;
+    sinon.stub(File, 'findById').returns({ ...file });
+    const stub = sinon.stub(fs, 'renameSync');
+
+    await storage.updateFile(req, res, () => {});
+
+    sinon.assert.calledOnceWithExactly(stub, file.path, newPath);
+  });
+
+  it('should call File.save() after update', async () => {
+    const file = {
+      path: 'path/to/file',
+      save: jest.fn(() => updatedFile),
+    };
+    sinon.stub(File, 'findById').returns({ ...file });
+    sinon.stub(fs, 'renameSync');
+
+    await storage.updateFile(req, res, () => {});
+
+    expect(file.save).toHaveBeenCalled();
+  });
+
+  it('should call res.status().json() with proper arguments if no error occur', async () => {
+    const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
+    sinon.stub(File, 'findById').returns({ ...file });
+    sinon.stub(fs, 'renameSync');
+
+    await storage.updateFile(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({
+      message: `File "${updatedFile.name}.${updatedFile.ext}" updated`,
+    });
+  });
+
+  it('should call next() with error with statusCode: 500 if some error occur', async () => {
+    const nextFake = jest.fn(arg => {});
+    sinon.stub(File, 'findById').throws();
+
+    await storage.updateFile(req, res, nextFake);
+
+    expect(nextFake).toHaveBeenCalledWith(expect.any(Error));
+    expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
+  });
+});

@@ -9,12 +9,13 @@ const sinon = require('sinon');
 const storage = require('../../controller/storage');
 
 describe('/controller/storage.js - getFiles', () => {
+  const req = { userId: 'user-id' };
+
   afterEach(() => {
     sinon.restore();
   });
 
   it('should call File.find() with proper argument', async () => {
-    const req = { userId: 'user-id' };
     const res = { status: () => res, json: () => {} };
     const findStub = sinon.stub(File, 'find').returns([]);
 
@@ -24,7 +25,6 @@ describe('/controller/storage.js - getFiles', () => {
   });
 
   it('should call res.status().json() with proper arguments if no error occurs', async () => {
-    const req = { userId: 'user-id' };
     const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
     const findResult = [
       {
@@ -66,7 +66,6 @@ describe('/controller/storage.js - getFiles', () => {
   });
 
   it('should call next() with error with statusCode: 500 is some error occur', async () => {
-    const req = { userId: 'user-id' };
     const nextFake = jest.fn(arg => {});
     sinon.stub(File, 'find').returns([{}]);
 
@@ -78,30 +77,31 @@ describe('/controller/storage.js - getFiles', () => {
 });
 
 describe('/controller/storage.js - uploadFiles', () => {
+  const req = {
+    userId: 'user-id',
+    files: [
+      { originalname: 'new-file-1.jpg', size: 1000 },
+      { originalname: 'new-file-2.png', size: 2000 },
+    ],
+  };
+  const res = { status: () => res, json: () => {} };
+  const storedFiles = [
+    { name: 'old-file-1', ext: 'jpg' },
+    { name: 'old-file-2', ext: 'png' },
+  ];
+  const savedFile = {
+    _id: 'saved-file-id',
+    type: 'saved-file-type',
+    name: 'saved-file-name',
+    ext: 'saved-file-ext',
+    path: 'saved-file-path',
+  };
+
   afterEach(() => {
     sinon.restore();
   });
 
   it('should call File.find() with proper arguments', async () => {
-    const req = {
-      userId: 'user-id',
-      files: [
-        { originalname: 'new-file-1.jpg', size: 1000 },
-        { originalname: 'new-file-2.png', size: 2000 },
-      ],
-    };
-    const res = { status: () => res, json: () => {} };
-    const storedFiles = [
-      { name: 'old-file-1', ext: 'jpg' },
-      { name: 'old-file-2', ext: 'png' },
-    ];
-    const savedFile = {
-      _id: 'saved-file-id',
-      type: 'saved-file-type',
-      name: 'saved-file-name',
-      ext: 'saved-file-ext',
-      path: 'saved-file-path',
-    };
     const findStub = sinon.stub(File, 'find').returns(storedFiles);
     sinon.stub(File.prototype, 'save').returns(savedFile);
     sinon.replace(process, 'env', { HOST: 'https://host' });
@@ -117,7 +117,6 @@ describe('/controller/storage.js - uploadFiles', () => {
   });
 
   it('should send proper response if files update limit was reached', async () => {
-    const req = { userId: 'user-id' };
     const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
     const jsonExpected = {
       message: "You can't add new files. Number of files limited to 20",
@@ -140,18 +139,6 @@ describe('/controller/storage.js - uploadFiles', () => {
         { originalname: 'new-file-3.rar', size: 1500 },
       ],
     };
-    const res = { status: () => res, json: () => {} };
-    const storedFiles = [
-      { name: 'old-file-1', ext: 'jpg' },
-      { name: 'old-file-2', ext: 'png' },
-    ];
-    const savedFile = {
-      _id: 'saved-file-id',
-      type: 'saved-file-type',
-      name: 'saved-file-name',
-      ext: 'saved-file-ext',
-      path: 'saved-file-path',
-    };
     sinon.stub(File, 'find').returns(storedFiles);
     const saveStub = sinon.stub(File.prototype, 'save').returns(savedFile);
     sinon.replace(process, 'env', { HOST: 'https://host' });
@@ -163,25 +150,6 @@ describe('/controller/storage.js - uploadFiles', () => {
   });
 
   it('should call User.findById() with proper argument for every uploaded file', async () => {
-    const req = {
-      userId: 'user-id',
-      files: [
-        { originalname: 'new-file-1.jpg', size: 1000 },
-        { originalname: 'new-file-2.png', size: 2000 },
-      ],
-    };
-    const res = { status: () => res, json: () => {} };
-    const storedFiles = [
-      { name: 'old-file-1', ext: 'jpg' },
-      { name: 'old-file-2', ext: 'png' },
-    ];
-    const savedFile = {
-      _id: 'saved-file-id',
-      type: 'saved-file-type',
-      name: 'saved-file-name',
-      ext: 'saved-file-ext',
-      path: 'saved-file-path',
-    };
     sinon.stub(File, 'find').returns(storedFiles);
     sinon.stub(File.prototype, 'save').returns(savedFile);
     sinon.replace(process, 'env', { HOST: 'https://host' });
@@ -194,25 +162,6 @@ describe('/controller/storage.js - uploadFiles', () => {
   });
 
   it('should call User.save() for every uploaded file', async () => {
-    const req = {
-      userId: 'user-id',
-      files: [
-        { originalname: 'new-file-1.jpg', size: 1000 },
-        { originalname: 'new-file-2.png', size: 2000 },
-      ],
-    };
-    const res = { status: () => res, json: () => {} };
-    const storedFiles = [
-      { name: 'old-file-1', ext: 'jpg' },
-      { name: 'old-file-2', ext: 'png' },
-    ];
-    const savedFile = {
-      _id: 'saved-file-id',
-      type: 'saved-file-type',
-      name: 'saved-file-name',
-      ext: 'saved-file-ext',
-      path: 'saved-file-path',
-    };
     const saveFake = jest.fn(() => {});
     sinon.stub(File, 'find').returns(storedFiles);
     sinon.stub(File.prototype, 'save').returns(savedFile);
@@ -225,25 +174,7 @@ describe('/controller/storage.js - uploadFiles', () => {
   });
 
   it('should call res.status().json() if no error occur', async () => {
-    const req = {
-      userId: 'user-id',
-      files: [
-        { originalname: 'new-file-1.jpg', size: 1000 },
-        { originalname: 'new-file-2.png', size: 2000 },
-      ],
-    };
     const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
-    const storedFiles = [
-      { name: 'old-file-1', ext: 'jpg' },
-      { name: 'old-file-2', ext: 'png' },
-    ];
-    const savedFile = {
-      _id: 'saved-file-id',
-      type: 'saved-file-type',
-      name: 'saved-file-name',
-      ext: 'saved-file-ext',
-      path: 'saved-file-path',
-    };
     const jsonExpected = {
       addedFiles: [
         {
@@ -273,17 +204,6 @@ describe('/controller/storage.js - uploadFiles', () => {
   });
 
   it('should call next() with error with statusCode: 500 if some error occur', async () => {
-    const req = {
-      userId: 'user-id',
-      files: [
-        { originalname: 'new-file-1.jpg', size: 1000 },
-        { originalname: 'new-file-2.png', size: 2000 },
-      ],
-    };
-    const storedFiles = [
-      { name: 'old-file-1', ext: 'jpg' },
-      { name: 'old-file-2', ext: 'png' },
-    ];
     const nextFake = jest.fn(() => {});
     sinon.stub(File, 'find').returns(storedFiles);
     sinon.stub(File.prototype, 'save').throws();
@@ -297,12 +217,13 @@ describe('/controller/storage.js - uploadFiles', () => {
 });
 
 describe('/controller/storage.js - downloadFile', () => {
+  const req = { params: { id: 'file-id' } };
+
   afterEach(() => {
     sinon.restore();
   });
 
   it('should call File.findById() with proper argument', async () => {
-    const req = { params: { id: 'file-id' } };
     const res = { status: () => res, download: () => {} };
     const file = { path: 'path/to/file', name: 'file-name' };
     const stub = sinon.stub(File, 'findById').returns(file);
@@ -313,7 +234,6 @@ describe('/controller/storage.js - downloadFile', () => {
   });
 
   it('should call res.status().download() with proper arguments', async () => {
-    const req = { params: { id: 'file-id' } };
     const res = { status: jest.fn(arg => res), download: jest.fn((arg1, arg2, arg3) => {}) };
     const file = { path: 'path/to/file', name: 'file-name' };
     sinon.stub(File, 'findById').returns(file);
@@ -325,7 +245,6 @@ describe('/controller/storage.js - downloadFile', () => {
   });
 
   it('should call next() with error with statusCode: 500 if some error occur', async () => {
-    const req = { params: { id: 'file-id' } };
     const nextFake = jest.fn(arg => {});
     sinon.stub(File, 'findById').throws();
 

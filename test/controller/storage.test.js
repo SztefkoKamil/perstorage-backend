@@ -414,3 +414,98 @@ describe('/controller/storage.js - updateFile', () => {
     expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
   });
 });
+
+describe('/controller/storage.js - deleteFile', () => {
+  const req = { userId: 'user-id', params: { id: 'file-id' } };
+  const res = { status: () => res, json: () => {} };
+  const deletedFile = { _id: 'deleted-id', name: 'file-name', ext: 'rar' };
+  const user = { save: () => {}, files: { pull: () => {} } };
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should call File.findByIdAndRemove() with proper argument', async () => {
+    const stub = sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    sinon.stub(User, 'findById').returns({ ...user });
+    sinon.stub(path, 'join').returns('path/to/file/storage');
+    sinon.stub(fs, 'unlink');
+
+    await storage.deleteFile(req, res, () => {});
+
+    sinon.assert.calledOnceWithExactly(stub, req.params.id);
+  });
+
+  it('should call User.findById() with proper argument', async () => {
+    sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    const stub = sinon.stub(User, 'findById').returns({ ...user });
+    sinon.stub(path, 'join').returns('path/to/file/storage');
+    sinon.stub(fs, 'unlink');
+
+    await storage.deleteFile(req, res, () => {});
+
+    sinon.assert.calledOnceWithExactly(stub, req.userId);
+  });
+
+  it('should call user.files.pull() with proper argument', async () => {
+    const user = { save: () => {}, files: { pull: jest.fn(arg => {}) } };
+    sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    sinon.stub(User, 'findById').returns({ ...user });
+    sinon.stub(path, 'join').returns('path/to/file/storage');
+    sinon.stub(fs, 'unlink');
+
+    await storage.deleteFile(req, res, () => {});
+
+    expect(user.files.pull).toHaveBeenCalledWith(deletedFile._id);
+  });
+
+  it('should call user.save()', async () => {
+    const user = { save: jest.fn(() => {}), files: { pull: () => {} } };
+    sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    sinon.stub(User, 'findById').returns({ ...user });
+    sinon.stub(path, 'join').returns('path/to/file/storage');
+    sinon.stub(fs, 'unlink');
+
+    await storage.deleteFile(req, res, () => {});
+
+    expect(user.save).toHaveBeenCalled();
+  });
+
+  it('should call fs.unlink() with proper arguments', async () => {
+    const filePath = 'path/to/file/storage';
+    const unlinkFake = jest.fn((arg1, arg2) => {});
+    sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    sinon.stub(User, 'findById').returns({ ...user });
+    sinon.stub(path, 'join').returns(filePath);
+    sinon.replace(fs, 'unlink', unlinkFake);
+
+    await storage.deleteFile(req, res, () => {});
+
+    expect(unlinkFake).toHaveBeenCalledWith(filePath, expect.any(Function));
+  });
+
+  it('should call res.status().json() with proper arguments if no error occur', async () => {
+    const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
+    const responseExpected = { message: `File "${deletedFile.name}.${deletedFile.ext}" deleted` };
+    sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    sinon.stub(User, 'findById').returns({ ...user });
+    sinon.stub(path, 'join').returns('path/to/file/storage');
+    sinon.stub(fs, 'unlink');
+
+    await storage.deleteFile(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith(responseExpected);
+  });
+
+  it('should call next() with error with statusCode: 500 if some error occur', async () => {
+    const nextFake = jest.fn(arg => {});
+    sinon.stub(File, 'findByIdAndRemove').returns({ ...deletedFile });
+    sinon.stub(User, 'findById').throws();
+
+    await storage.deleteFile(req, res, nextFake);
+
+    expect(nextFake).toHaveBeenCalledWith(expect.any(Error));
+    expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
+  });
+});

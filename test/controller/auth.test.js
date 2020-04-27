@@ -1,4 +1,6 @@
 const sinon = require('sinon');
+const fs = require('fs');
+const fsExtra = require('fs-extra');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const process = require('process');
@@ -8,14 +10,157 @@ const File = require('../../model/file');
 
 const auth = require('../../controller/auth');
 
-const req = {
-  body: {
-    email: 'test@test.com',
-    password: 'password1',
-  },
-};
+describe('/controller/auth.js - signup', () => {
+  const req = {
+    body: {
+      email: 'test@test.pl',
+      name: 'Tester',
+      password: 'password1',
+    },
+  };
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should thrown error with statusCode: 422 if in database is 10 or more users', async () => {
+    sinon.stub(User, 'find').returns({ countDocuments: () => 10 });
+
+    const result = await auth.signup(req, {}, () => {});
+
+    expect(result).toEqual(expect.any(Error));
+    expect(result).toHaveProperty('statusCode', 422);
+    expect(result).toHaveProperty(
+      'message',
+      'Sorry, too much users. Please contact me: sztefkokamil@gmail.com'
+    );
+  });
+
+  it('should thrown error with statusCode: 409 if user with email exist in database', async () => {
+    sinon.stub(User, 'find').returns({ countDocuments: () => 8 });
+    sinon.stub(User, 'findOne').returns(true);
+
+    const result = await auth.signup(req, {}, () => {});
+
+    expect(result).toEqual(expect.any(Error));
+    expect(result).toHaveProperty('statusCode', 409);
+    expect(result).toHaveProperty('message', 'User with this email exist');
+  });
+
+  it('should call bcrypt.hash() with proper arguments', async () => {
+    const hashFake = jest.fn((arg1, arg2) => 'hashed-password');
+    const res = {
+      status: () => res,
+      json: () => {},
+    };
+    sinon.stub(User, 'find').returns({ countDocuments: () => 8 });
+    sinon.stub(User, 'findOne').returns(false);
+    sinon
+      .stub(User.prototype, 'save')
+      .returns({ email: req.email, name: req.name, _id: 'user-id' });
+    sinon.replace(bcrypt, 'hash', hashFake);
+    sinon.stub(fs, 'mkdirSync');
+
+    await auth.signup(req, res, () => {});
+
+    expect(hashFake).toHaveBeenCalledWith(req.body.password, 12);
+  });
+
+  it('should save new User', async () => {
+    const res = {
+      status: () => res,
+      json: () => {},
+    };
+    const saveReturn = {
+      _id: 'user-id',
+      email: req.body.email,
+      name: req.body.name,
+    };
+    const saveFake = jest.fn(() => saveReturn);
+    sinon.stub(User, 'find').returns({ countDocuments: () => 8 });
+    sinon.stub(User, 'findOne').returns(false);
+    sinon.replace(User.prototype, 'save', saveFake);
+    sinon.stub(bcrypt, 'hash').returns('hashed-password');
+    sinon.stub(fs, 'mkdirSync');
+
+    await auth.signup(req, res, () => {});
+
+    expect(saveFake).toHaveBeenCalled();
+  });
+
+  it('should call fs.mkdirSync() with proper argument', async () => {
+    const res = {
+      status: () => res,
+      json: () => {},
+    };
+    const mkdirSyncFake = jest.fn(arg => {});
+    sinon.stub(User, 'find').returns({ countDocuments: () => 8 });
+    sinon.stub(User, 'findOne').returns(false);
+    sinon
+      .stub(User.prototype, 'save')
+      .returns({ email: req.body.email, name: req.body.name, _id: 'user-id' });
+    sinon.stub(bcrypt, 'hash').returns('hashed-password');
+    sinon.replace(fs, 'mkdirSync', mkdirSyncFake);
+
+    await auth.signup(req, res, () => {});
+
+    expect(mkdirSyncFake).toHaveBeenCalledWith('storage/user-user-id');
+  });
+
+  it('should call res.state().jason() with proper arguments if no errors occur', async () => {
+    const res = {
+      status: jest.fn(arg => res),
+      json: jest.fn(arg => {}),
+    };
+    sinon.stub(User, 'find').returns({ countDocuments: () => 8 });
+    sinon.stub(User, 'findOne').returns(false);
+    sinon
+      .stub(User.prototype, 'save')
+      .returns({ email: req.body.email, name: req.body.name, _id: 'user-id' });
+    sinon.stub(bcrypt, 'hash').returns('hashed-password');
+    sinon.stub(fs, 'mkdirSync');
+
+    await auth.signup(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: req.body.email,
+        name: req.body.name,
+        id: 'user-id',
+      })
+    );
+  });
+
+  it('should call next() with error with error.statusCode: 500 if undefined error occurs', async () => {
+    const nextFake = jest.fn(err => {});
+    sinon.stub(User, 'find').returns({ countDocuments: () => 8 });
+    sinon.stub(User, 'findOne').returns(false);
+    sinon
+      .stub(User.prototype, 'save')
+      .returns({ email: req.body.email, name: req.body.name, _id: 'user-id' });
+    sinon.stub(bcrypt, 'hash').returns('hashed-password');
+    sinon.stub(fs, 'mkdirSync').throws('undefined-error');
+
+    await auth.signup(req, {}, nextFake);
+
+    expect(nextFake).toHaveBeenCalledWith(expect.any(Error));
+    expect(nextFake).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 500,
+      })
+    );
+  });
+});
 
 describe('/controller/auth.js - login', () => {
+  const req = {
+    body: {
+      email: 'test@test.com',
+      password: 'password1',
+    },
+  };
+
   afterEach(() => {
     sinon.restore();
   });
@@ -101,5 +246,86 @@ describe('/controller/auth.js - login', () => {
         statusCode: 500,
       })
     );
+  });
+});
+
+describe('/controller/auth.js - delete', () => {
+  const req = { userId: 'user-id' };
+  const res = { status: () => res, json: () => {} };
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should check if account to delete is Guest account', async () => {
+    const res = {
+      status: jest.fn(arg => res),
+      json: jest.fn(arg => {}),
+    };
+    sinon.replace(process, 'env', { GUEST: req.userId });
+
+    await auth.delete(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "You can't delete Guest account." })
+    );
+  });
+
+  it('should call User.findByIdAndRemove() with proper argument', async () => {
+    const findByIdAndRemoveFake = jest.fn(arg => {});
+    sinon.replace(User, 'findByIdAndRemove', findByIdAndRemoveFake);
+    sinon.stub(File, 'deleteMany');
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, res, () => {});
+
+    expect(findByIdAndRemoveFake).toHaveBeenCalledWith(req.userId);
+  });
+
+  it('should call File.deleteMany() with proper argument', async () => {
+    const deleteManyFake = jest.fn(arg => {});
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.replace(File, 'deleteMany', deleteManyFake);
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, res, () => {});
+
+    expect(deleteManyFake).toHaveBeenCalledWith({ owner: req.userId });
+  });
+
+  it('should call fsExtra.remove() with proper arguments', async () => {
+    const removeFake = jest.fn(arg => {});
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.stub(File, 'deleteMany');
+    sinon.replace(fsExtra, 'remove', removeFake);
+
+    await auth.delete(req, res, () => {});
+
+    expect(removeFake).toHaveBeenCalledWith(`storage/user-${req.userId}`, expect.any(Function));
+  });
+
+  it('should call res.status().json() with proper arguments if no errors occur', async () => {
+    const res = { status: jest.fn(arg => res), json: jest.fn(arg => {}) };
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.stub(File, 'deleteMany');
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, res, () => {});
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({ message: 'User deleted' });
+  });
+
+  it('should call next() with error with statusCode: 500 if some arror occur', async () => {
+    const nextFake = jest.fn(arg => {});
+    sinon.stub(User, 'findByIdAndRemove');
+    sinon.stub(File, 'deleteMany').throws('undefined-error');
+    sinon.stub(fsExtra, 'remove');
+
+    await auth.delete(req, {}, nextFake);
+
+    expect(nextFake).toHaveBeenCalledWith(expect.any(Error));
+    expect(nextFake).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
   });
 });

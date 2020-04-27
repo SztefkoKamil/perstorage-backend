@@ -251,6 +251,7 @@ describe('/controller/auth.js - login', () => {
 
 describe('/controller/auth.js - delete', () => {
   const req = { userId: 'user-id' };
+  const res = { status: () => res, json: () => {} };
 
   afterEach(() => {
     sinon.restore();
@@ -273,7 +274,6 @@ describe('/controller/auth.js - delete', () => {
 
   it('should call User.findByIdAndRemove() with proper argument', async () => {
     const findByIdAndRemoveFake = jest.fn(arg => {});
-    const res = { status: () => res, json: () => {} };
     sinon.replace(User, 'findByIdAndRemove', findByIdAndRemoveFake);
     sinon.stub(File, 'deleteMany');
     sinon.stub(fsExtra, 'remove');
@@ -285,7 +285,6 @@ describe('/controller/auth.js - delete', () => {
 
   it('should call File.deleteMany() with proper argument', async () => {
     const deleteManyFake = jest.fn(arg => {});
-    const res = { status: () => res, json: () => {} };
     sinon.stub(User, 'findByIdAndRemove');
     sinon.replace(File, 'deleteMany', deleteManyFake);
     sinon.stub(fsExtra, 'remove');
@@ -297,7 +296,6 @@ describe('/controller/auth.js - delete', () => {
 
   it('should call fsExtra.remove() with proper arguments', async () => {
     const removeFake = jest.fn(arg => {});
-    const res = { status: () => res, json: () => {} };
     sinon.stub(User, 'findByIdAndRemove');
     sinon.stub(File, 'deleteMany');
     sinon.replace(fsExtra, 'remove', removeFake);
